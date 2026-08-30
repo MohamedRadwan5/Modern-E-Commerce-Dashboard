@@ -1,0 +1,33 @@
+<div class="container">
+  <div class="list-header">
+    <h2>Product List (GET & DELETE)</h2>
+    <button class="filter-btn" (click)="toggleFilter()">
+      {{ showExpensiveOnly ? 'Show All Products' : 'Show Expensive Only (> $500)' }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-box">
+    <div class="spinner"></div>
+    <p>Loading products from FakeStore API...</p>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <div class="product-grid" *ngIf="!loading && products.length > 0">
+    <div class="card" *ngFor="let product of products">
+      <div class="card-img-wrap">
+        <img [src]="product.image" [alt]="product.title" />
+      </div>
+      <div class="card-info">
+        <h4>{{ product.title }}</h4>
+        <span class="badge">{{ product.category | titlecase }}</span>
+        <p class="price">${{ product.price }}</p>
+      </div>
+      <button class="delete-btn" (click)="onDelete(product.id)">🗑️ Delete Product</button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && products.length === 0" class="empty-box">
+    <p>No products found {{ showExpensiveOnly ? 'costing over $500' : '' }}.</p>
+  </div>
+</div>

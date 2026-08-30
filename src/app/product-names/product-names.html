@@ -1,0 +1,23 @@
+<div class="container">
+  <h2>Product Names List (GET Titles)</h2>
+
+  <div *ngIf="loading" class="loading-box">
+    <div class="spinner"></div>
+    <p>Fetching product titles from FakeStore API...</p>
+  </div>
+
+  <div *ngIf="errorMsg" class="error-msg">
+    {{ errorMsg }}
+  </div>
+
+  <ul class="names-list" *ngIf="!loading && names.length > 0">
+    <li *ngFor="let name of names; let i = index">
+      <span class="index-num">#{{ i + 1 }}</span>
+      <span class="name-text">{{ name }}</span>
+    </li>
+  </ul>
+
+  <div *ngIf="!loading && names.length === 0 && !errorMsg" class="empty-box">
+    <p>No product names found.</p>
+  </div>
+</div>

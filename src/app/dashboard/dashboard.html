@@ -1,0 +1,305 @@
+<div class="dashboard-container">
+  <!-- Toast Notification Alert -->
+  <div *ngIf="toastMessage" class="toast-alert" [ngClass]="'toast-' + toastType">
+    <div class="toast-content">
+      <span class="toast-icon" *ngIf="toastType === 'success'">✓</span>
+      <span class="toast-icon" *ngIf="toastType === 'error'">✕</span>
+      <span class="toast-icon" *ngIf="toastType === 'info'">ℹ</span>
+      <span class="toast-text">{{ toastMessage }}</span>
+    </div>
+    <button type="button" class="toast-close" (click)="toastMessage = null">&times;</button>
+  </div>
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <h1>E-Commerce Admin Dashboard</h1>
+      <p>Manage store products, view analytics, and run complete CRUD operations via FakeStore API</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary btn-add" (click)="openAddModal()">
+        <span class="btn-icon">+</span> Add New Product
+      </button>
+    </div>
+  </header>
+
+  <!-- Analytics Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon icon-blue">📦</div>
+      <div class="stat-info">
+        <h3>Total Products</h3>
+        <p class="stat-number">{{ totalProductsCount }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-purple">🏷️</div>
+      <div class="stat-info">
+        <h3>Categories</h3>
+        <p class="stat-number">{{ totalCategoriesCount }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-green">💵</div>
+      <div class="stat-info">
+        <h3>Average Price</h3>
+        <p class="stat-number">${{ avgPrice }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-amber">⭐</div>
+      <div class="stat-info">
+        <h3>Top Rated</h3>
+        <p class="stat-title-small" *ngIf="topRatedProduct">{{ topRatedProduct.title }}</p>
+        <span class="badge badge-star" *ngIf="topRatedProduct">★ {{ topRatedProduct.rating?.rate }} ({{ topRatedProduct.rating?.count }})</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Panel: Search, Category Filter, Sorting & View Toggle -->
+  <div class="control-panel">
+    <div class="search-box">
+      <span class="search-icon"></span>
+      <input
+        type="text"
+        placeholder="Search products by title, category, or description..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+        class="form-control search-input"
+      />
+      <button *ngIf="searchQuery" class="clear-btn" (click)="searchQuery = ''; onSearchChange()">&times;</button>
+    </div>
+
+    <div class="filter-controls">
+      <div class="control-group">
+        <label>Category:</label>
+        <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()" class="form-select">
+          <option value="all">All Categories</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat | titlecase }}</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Sort By:</label>
+        <select [(ngModel)]="sortBy" (change)="onSortChange()" class="form-select">
+          <option value="default">Default</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+          <option value="title-asc">Title: A - Z</option>
+          <option value="title-desc">Title: Z - A</option>
+          <option value="rating">Highest Rating</option>
+        </select>
+      </div>
+
+      <button class="btn btn-outline" (click)="resetFilters()">Reset</button>
+
+      <div class="view-toggle">
+        <button class="toggle-btn" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'" title="Table View">📋 Table</button>
+        <button class="toggle-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" title="Grid View">🔲 Grid</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State Indicator -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Communicating with FakeStore API...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+    <div class="empty-icon">📂</div>
+    <h3>No Products Found</h3>
+    <p>Try adjusting your search query or selected category filter.</p>
+    <button class="btn btn-primary" (click)="resetFilters()">Reset Filters</button>
+  </div>
+
+  <!-- TABLE VIEW -->
+  <div *ngIf="!loading && filteredProducts.length > 0 && viewMode === 'table'" class="table-card">
+    <div class="table-responsive">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Image</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Rating</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of filteredProducts">
+            <td class="cell-id">#{{ product.id }}</td>
+            <td class="cell-img">
+              <img [src]="product.image" [alt]="product.title" class="product-thumb" (click)="openViewModal(product)" />
+            </td>
+            <td class="cell-title">
+              <a href="javascript:void(0)" (click)="openViewModal(product)" class="title-link">{{ product.title }}</a>
+            </td>
+            <td>
+              <span class="badge badge-category">{{ product.category | titlecase }}</span>
+            </td>
+            <td class="cell-price">${{ product.price.toFixed(2) }}</td>
+            <td>
+              <span class="rating-span" *ngIf="product.rating">
+                ⭐ {{ product.rating.rate }} <small>({{ product.rating.count }})</small>
+              </span>
+              <span *ngIf="!product.rating" class="text-muted">N/A</span>
+            </td>
+            <td class="cell-actions text-right">
+              <button class="btn-action btn-view" (click)="openViewModal(product)" title="View Details">👁️</button>
+              <button class="btn-action btn-edit" (click)="openEditModal(product)" title="Edit Product">✏️</button>
+              <button class="btn-action btn-delete" (click)="openDeleteModal(product)" title="Delete Product">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span>Showing {{ filteredProducts.length }} of {{ products.length }} items</span>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div *ngIf="!loading && filteredProducts.length > 0 && viewMode === 'grid'" class="products-grid">
+    <div *ngFor="let product of filteredProducts" class="product-card">
+      <div class="card-image-container" (click)="openViewModal(product)">
+        <img [src]="product.image" [alt]="product.title" class="card-img" />
+        <span class="badge badge-category card-badge">{{ product.category | titlecase }}</span>
+      </div>
+      <div class="card-body">
+        <h4 class="card-title" (click)="openViewModal(product)">{{ product.title }}</h4>
+        <p class="card-desc">{{ product.description | slice:0:80 }}...</p>
+        <div class="card-meta">
+          <span class="card-price">${{ product.price.toFixed(2) }}</span>
+          <span class="card-rating" *ngIf="product.rating">⭐ {{ product.rating.rate }}</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-outline btn-sm" (click)="openViewModal(product)">Details</button>
+        <button class="btn btn-warning btn-sm" (click)="openEditModal(product)">Edit</button>
+        <button class="btn btn-danger btn-sm" (click)="openDeleteModal(product)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW PRODUCT MODAL -->
+  <div class="modal-overlay" *ngIf="showViewModal && selectedProduct" (click)="closeModals()">
+    <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Product Details (#{{ selectedProduct.id }})</h2>
+        <button class="close-btn" (click)="closeModals()">&times;</button>
+      </div>
+      <div class="modal-body product-detail-body">
+        <div class="detail-img-wrap">
+          <img [src]="selectedProduct.image" [alt]="selectedProduct.title" />
+        </div>
+        <div class="detail-info">
+          <span class="badge badge-category">{{ selectedProduct.category | titlecase }}</span>
+          <h3>{{ selectedProduct.title }}</h3>
+          <div class="detail-price">${{ selectedProduct.price.toFixed(2) }}</div>
+          <p class="detail-desc">{{ selectedProduct.description }}</p>
+          <div class="detail-meta" *ngIf="selectedProduct.rating">
+            <span>Rating: <strong>⭐ {{ selectedProduct.rating.rate }} / 5</strong></span>
+            <span>Total Reviews: <strong>{{ selectedProduct.rating.count }}</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-warning" (click)="closeModals(); openEditModal(selectedProduct)">Edit</button>
+        <button class="btn btn-secondary" (click)="closeModals()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT PRODUCT FORM MODAL -->
+  <div class="modal-overlay" *ngIf="showAddModal || showEditModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ showAddModal ? 'Create New Product' : 'Edit Product #' + selectedProduct?.id }}</h2>
+        <button class="close-btn" (click)="closeModals()">&times;</button>
+      </div>
+      <form [formGroup]="productForm" (ngSubmit)="showAddModal ? submitAdd() : submitEdit()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Product Title *</label>
+            <input type="text" formControlName="title" class="form-control" placeholder="e.g., Foldsack Backpack" />
+            <small class="error-text" *ngIf="productForm.get('title')?.touched && productForm.get('title')?.invalid">
+              Title is required (at least 3 characters).
+            </small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label>Price ($) *</label>
+              <input type="number" step="0.01" formControlName="price" class="form-control" placeholder="109.95" />
+              <small class="error-text" *ngIf="productForm.get('price')?.touched && productForm.get('price')?.invalid">
+                Price must be greater than 0.
+              </small>
+            </div>
+
+            <div class="form-group col">
+              <label>Category *</label>
+              <select formControlName="category" class="form-select">
+                <option value="" disabled>Select category</option>
+                <option *ngFor="let cat of categories" [value]="cat">{{ cat | titlecase }}</option>
+                <option value="electronics" *ngIf="categories.length === 0">Electronics</option>
+                <option value="jewelery" *ngIf="categories.length === 0">Jewelery</option>
+                <option value="men's clothing" *ngIf="categories.length === 0">Men's Clothing</option>
+                <option value="women's clothing" *ngIf="categories.length === 0">Women's Clothing</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Image URL *</label>
+            <input type="text" formControlName="image" class="form-control" placeholder="https://fakestoreapi.com/img/..." />
+            <small class="error-text" *ngIf="productForm.get('image')?.touched && productForm.get('image')?.invalid">
+              Valid image URL is required.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Description *</label>
+            <textarea formControlName="description" rows="4" class="form-control" placeholder="Provide product description..."></textarea>
+            <small class="error-text" *ngIf="productForm.get('description')?.touched && productForm.get('description')?.invalid">
+              Description is required.
+            </small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            {{ showAddModal ? 'Save Product' : 'Update Product' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div class="modal-overlay" *ngIf="showDeleteModal && productToDelete" (click)="closeModals()">
+    <div class="modal-content modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
+        <h2>Confirm Delete</h2>
+        <button class="close-btn" (click)="closeModals()">&times;</button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="delete-icon-alert">⚠️</div>
+        <p>Are you sure you want to delete product <strong>"{{ productToDelete.title }}"</strong> (#{{ productToDelete.id }})?</p>
+        <p class="text-muted small">This operation will trigger a DELETE request to FakeStore API.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading">Delete Product</button>
+      </div>
+    </div>
+  </div>
+
+</div>

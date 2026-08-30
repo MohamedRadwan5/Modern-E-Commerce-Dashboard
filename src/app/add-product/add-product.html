@@ -1,0 +1,39 @@
+<div class="container">
+  <h2>Add New Product (POST Request)</h2>
+
+  <form (ngSubmit)="onSubmit()" #productForm="ngForm" class="form-wrapper">
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" name="title" [(ngModel)]="newProduct.title" class="form-control" required placeholder="e.g. Fjallraven - Foldsack No. 1 Backpack" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col">
+        <label>Price ($) *</label>
+        <input type="number" name="price" [(ngModel)]="newProduct.price" class="form-control" required placeholder="109.95" />
+      </div>
+
+      <div class="form-group col">
+        <label>Category</label>
+        <input type="text" name="category" [(ngModel)]="newProduct.category" class="form-control" placeholder="men's clothing" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Image URL</label>
+      <input type="text" name="image" [(ngModel)]="newProduct.image" class="form-control" placeholder="https://fakestoreapi.com/img/..." />
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" [(ngModel)]="newProduct.description" class="form-control" rows="3" placeholder="Enter product description..."></textarea>
+    </div>
+
+    <button type="submit" [disabled]="productForm.invalid" class="btn btn-primary">
+      ➕ Create Product (POST)
+    </button>
+  </form>
+
+  <p class="success-msg" *ngIf="successMsg">✓ {{ successMsg }}</p>
+  <p class="error-msg" *ngIf="errorMsg">✕ {{ errorMsg }}</p>
+</div>
